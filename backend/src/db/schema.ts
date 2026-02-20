@@ -1,15 +1,16 @@
 import { sql } from "drizzle-orm";
 import {
-    integer,
+    serial,
     pgTable,
-    varchar,
+    text,
     boolean,
-    timestamp,
+    date,
 } from "drizzle-orm/pg-core";
 
 export const tasksTable = pgTable("tasks", {
-    id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    title: varchar({ length: 255 }).notNull(),
-    isCompleted: boolean().notNull(),
-    whenCreated: timestamp().default(sql`now()`),
+    id: serial().primaryKey(),
+    name: text().notNull(),
+    description: text(),
+    is_completed: boolean("is_completed").notNull().default(false),
+    when_created: date("when_created").notNull().default(sql`CURRENT_DATE`)
 });
