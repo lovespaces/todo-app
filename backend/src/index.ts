@@ -1,41 +1,52 @@
-import 'dotenv/config';
-import { drizzle } from 'drizzle-orm/neon-http';
-import { eq } from 'drizzle-orm';
-import { Hono } from 'hono'
+import "dotenv/config";
+import { drizzle } from "drizzle-orm/neon-http";
+import { eq } from "drizzle-orm";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
 
-import { tasksTable } from './db/schema';
+import { tasksTable } from "./db/schema";
 
 const db = drizzle(process.env.DATABASE_URL!);
+
+function parseBool(v: string): boolean | null {
+    if (v === "true") return true;
+    if (v === "false") return false;
+
+    return null;
+}
+
 const app = new Hono()
+    .use(cors({
+        origin: process.env.FRONTEND_URL!,
+    }))
+    .get("/db", async (c) => {
+        try {
+            const tasks = await db.select().from(tasksTable);
 
-app.get('/', (c) => {
-  return c.text('Hello Hono!')
-});
+            return c.json(tasks, 200);
+        } catch (e) {
+            return c.json({ message: "DB Error" }, 500);
+        }
+    })
+    .patch("/db/completed/:id/:bool", async (c) => {
+        const id: number = Number(c.req.param("id"));
+        const bool: boolean | null = parseBool(c.req.param("bool"));
 
-app.get('/db/get', async (c) => {
-  try {
-    const tasks = await db.select().from(tasksTable);
+        if (!id || !bool) {
+            return c.json({ message: "UNKNOWN PARAM" }, 404);
+        }
 
-    return c.json(tasks, 201);
-  } catch (e) {
-    return c.json({ message: 'DB Error' }, 500);
-  }
-});
+        try {
+            await db
+                .update(tasksTable)
+                .set({ is_completed: bool })
+                .where(eq(tasksTable.id, id));
 
-app.patch('/db/completed/:id/:bool', async (c) => {
-  // id | bool 取得、念のためifで不適切なものははじくように
+            return c.json({ message: "Done" }, 200);
+        } catch (e) {
+            return c.json({ message: "DB Error" }, 500);
+        }
+    });
 
-  try {
-    const tasks = await db.select().from(tasksTable);
-
-    if (tasks.length === 0) {
-      return c.json({ message: 'NOT FOUND'}, 404);
-    }
-
-    return c.json({ message: 'Boolean edited' }, 201);
-  } catch (e) {
-    return c.json({ message: 'DB Error' }, 500)
-  }
-});
-
-export default app
+export type AppType = typeof app;
+export default app;
