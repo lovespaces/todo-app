@@ -1,23 +1,23 @@
 import CreateButton from "./components/CreateButton";
 import TaskDiv from "./components/TaskDiv";
-import { hc } from "hono/client";
-import type { AppType } from "@backend/index";
-import { useEffect } from "react";
-
-const client = hc<AppType>(import.meta.env.VITE_API_URL);
+import { useQuery} from "@tanstack/react-query";
+import type { Dist } from "./types/db";
+import { client } from "./api/client";
 
 function App() {
-    // useEffectじゃなくてqueryを使う
-    // TaskDivにデータを送るようにして、TaskDiv.tsx内で扱えるようにする
-    const fetchApi = async () => {
+    const fetchApi = async (): Promise<Dist> => {
         const res = await client.db.$get();
+        if (!res.ok) {
+            throw new Error("failed");
+        }
         const data = await res.json();
-        console.log(data);
+        return data as unknown as Dist;
     }
 
-    useEffect(() => {
-        fetchApi();
-    }, [])
+    const { data, error, isLoading } = useQuery({queryKey: ['data'], queryFn: fetchApi})
+
+    if (isLoading) return <div>loading</div>;
+    if (error) return <div>error check log</div>;
 
     return (
         <>
@@ -34,7 +34,7 @@ function App() {
                     <div className="flex justify-end-safe h-[2.5em]">
                         <CreateButton />
                     </div>
-                    <TaskDiv />
+                    <TaskDiv data={data ?? []}/>
                 </div>
             </div>
         </>
