@@ -4,7 +4,7 @@ import { client } from "../api/client";
 function TaskProgressButton({ isToggle, taskId }: { isToggle: boolean, taskId: number }) {
     const queryClient = useQueryClient();
 
-    const handleClick = async () => { // completeかどうかをprops経由でApp.tsxから取得、条件でPATCHを使って更新 + スタイル変更
+    const handleClick = async () => {
         await client.db.completed[":id"].$patch({
             param: { id: taskId.toString() },
             json: { is_completed: !isToggle }
