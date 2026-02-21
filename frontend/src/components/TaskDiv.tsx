@@ -12,7 +12,7 @@ function TaskDiv({ data }: Props) {
             <div className="flex flex-col gap-6">
                 {data.map((task) => (
                     <div className="flex items-center gap-2" key={task.id}>
-                        <TaskProgressButton isToggle={task.is_completed} />
+                        <TaskProgressButton isToggle={task.is_completed} taskId={task.id} />
                         <div className="flex-1 flex flex-col">
                             <p className="font-bold">{task.name}</p>
                             <div className="flex justify-between opacity-75">
