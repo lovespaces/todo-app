@@ -1,9 +1,11 @@
 import CreateButton from "./components/CreateButton";
 import TaskDiv from "./components/TaskDiv";
-import { useQuery} from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type { Dist } from "./types/db";
 import { client } from "./api/client";
-
+// headlessuiのDialogをCreate Modalとして利用することの検討
+// https://headlessui.com/react/dialog
+// https://github.com/tailwindlabs/headlessui
 function App() {
     const fetchApi = async (): Promise<Dist> => {
         const res = await client.db.$get();
