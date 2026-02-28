@@ -38,8 +38,8 @@ function App() {
 
     return (
         <>
-            <div className="bg-gray-800 text-white flex min-h-screen w-dvw justify-center items-center">
-                <div className="flex justify-center h-lvh flex-col w-full max-w-127.5 gap-4">
+            <div className="bg-gray-800 text-white flex min-h-vh min-h-dvh w-full justify-center items-center font-noto">
+                <div className="flex justify-center h-full flex-col w-full max-w-127.5 gap-4">
                     <div>
                         <p className="font-rnro text-2xl select-none">
                             タスクアプリ
