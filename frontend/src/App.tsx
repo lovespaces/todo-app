@@ -1,25 +1,40 @@
 import CreateButton from "./components/CreateButton";
 import TaskDiv from "./components/TaskDiv";
-import { useQuery } from "@tanstack/react-query";
-import type { Dist } from "./types/db";
-import { client } from "./api/client";
-// headlessuiのDialogをCreate Modalとして利用することの検討
-// https://headlessui.com/react/dialog
-// https://github.com/tailwindlabs/headlessui
+import CreateTaskModal from "./components/CreateTaskModal";
+import SelectButton from "./components/SelectButton";
+import { deleteTask } from "./api/delete";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getDatas } from "./api/fetch";
+import { useState } from "react";
+
 function App() {
-    const fetchApi = async (): Promise<Dist> => {
-        const res = await client.db.$get();
-        if (!res.ok) {
-            throw new Error("failed");
+    const queryClient = useQueryClient();
+    const { data, error, isLoading } = useQuery({queryKey: ['data'], queryFn: getDatas});
+    const [openCreateModal, setCreateModal] = useState(false);
+    const [clickedSelect, setSelectMode] = useState(false);
+    const [deleteTodos, selectTodos] = useState<number[]>([]);
+
+    const handleSelect = (item: number, isDelete: boolean) => {
+        if (isDelete) {
+            selectTodos([...deleteTodos, item]);
+        } else {
+            selectTodos((prev) =>
+                prev.includes(item) ? prev.filter((v) => v !== item) : [...prev, item]
+            );
         }
-        const data = await res.json();
-        return data as unknown as Dist;
+    };
+
+    const handleSelectButton = async (isSelect: boolean) => {
+        setSelectMode(isSelect);
+        if (!isSelect) {
+            await deleteTask(deleteTodos);
+            selectTodos([]);
+            await queryClient.invalidateQueries({ queryKey: ['data'] });
+        }
     }
 
-    const { data, error, isLoading } = useQuery({queryKey: ['data'], queryFn: fetchApi})
-
-    if (isLoading) return <div>loading</div>;
-    if (error) return <div>error check log</div>;
+    if (isLoading) return <div>Loading ...</div>;
+    if (error) return <div>ERROR</div>;
 
     return (
         <>
@@ -33,10 +48,12 @@ function App() {
                             made with ❤️.
                         </p>
                     </div>
-                    <div className="flex justify-end-safe h-[2.5em]">
-                        <CreateButton />
+                    <div className="flex justify-end-safe h-[2.5em] gap-5">
+                        <SelectButton onClick={async () => await handleSelectButton(!clickedSelect)} isSelected={clickedSelect} ></SelectButton>
+                        <CreateButton onClick={() => setCreateModal(true)} />
                     </div>
-                    <TaskDiv data={data ?? []}/>
+                    <TaskDiv data={data ?? []} selectMode={clickedSelect} setSelect={handleSelect} />
+                    <CreateTaskModal isOpen={openCreateModal} onClose={() => setCreateModal(false)} />
                 </div>
             </div>
         </>
