@@ -6,6 +6,7 @@ import { deleteTask } from "./api/delete";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getDatas } from "./api/fetch";
 import { useState } from "react";
+import { toast } from "react-toastify";
 
 function App() {
     const queryClient = useQueryClient();
@@ -27,14 +28,22 @@ function App() {
     const handleSelectButton = async (isSelect: boolean) => {
         setSelectMode(isSelect);
         if (!isSelect) {
-            await deleteTask(deleteTodos);
+            try {
+              await deleteTask(deleteTodos);
+              await queryClient.invalidateQueries({ queryKey: ['data'] });
+              toast.success(`${deleteTodos.length} 個のTo-Doを削除しました`);
+            } catch (e) {
+                toast.error(`削除できませんでした: ${e}`);
+            }
             selectTodos([]);
-            await queryClient.invalidateQueries({ queryKey: ['data'] });
         }
     }
 
-    if (isLoading) return <div>Loading ...</div>;
-    if (error) return <div>ERROR</div>;
+    if (isLoading) return <div className="bg-gray-800 text-white">Loading ...</div>;
+    if (error) {
+        toast.error("データの読み込みに失敗しました");
+        return <div className="bg-gray-800 text-white">ERROR</div>
+    };
 
     return (
         <>

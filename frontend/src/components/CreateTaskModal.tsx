@@ -2,17 +2,37 @@ import { useQueryClient } from '@tanstack/react-query';
 import { postTask } from '../api/create';
 import { Dialog, DialogPanel, DialogTitle, Field, Input, Label } from '@headlessui/react';
 import { useState } from 'react';
+import { toast } from 'react-toastify';
 
 function CreateTaskModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void}) {
     const [inputName, setInputName] = useState("");
     const [inputDesc, setInputDesc] = useState("");
+    const [isNothing, setError] = useState(false);
     const queryClient = useQueryClient();
 
+    const validate = (value: string): boolean => {
+        setInputName(value);
+        if (!value.trim()) {
+            setError(true);
+            return false;
+        }
+        setError(false);
+        return true;
+    }
+
     const createTask = async (received: { name: string, description: string }) => {
-        await postTask(received);
+        if (!validate(received.name)) {
+            return;
+        }
+        try {
+          await postTask(received);
+          await queryClient.invalidateQueries({ queryKey: ['data'] });
+          toast.success("作成しました");
+        } catch (e) {
+            toast.error(`作成できませんでした: ${e}`)
+        }
         setInputName("");
         setInputDesc("");
-        await queryClient.invalidateQueries({ queryKey: ['data'] });
         onClose();
     }
 
@@ -23,7 +43,8 @@ function CreateTaskModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => 
                 <DialogTitle className="font-bold text-2xl select-none">To-Do を作る</DialogTitle>
                 <Field>
                     <Label className="text-sm/6 font-medium text-white select-none">タスクの名前 <span className="text-red-400">*</span></Label>
-                    <Input onChange={(e) => setInputName(e.target.value)} className="bg-gray-800 rounded-lg w-full mt-3 text-white px-3 py-1.5 focus:outline-2 focus:outline-gray-300" required placeholder='入力してください'/>
+                    <Input onChange={(e) => validate(e.target.value)} className="bg-gray-800 rounded-lg w-full mt-3 text-white px-3 py-1.5 focus:outline-2 focus:outline-gray-300" required placeholder='入力してください'/>
+                    { isNothing && <p className="text-red-400">入力されていません</p>}
                 </Field>
                 <Field>
                     <Label className="text-sm/6 font-medium text-white select-none">タスクの説明</Label>
